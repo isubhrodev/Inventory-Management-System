@@ -1,6 +1,7 @@
 package com.project.microservices.inventory_service.controllers;
 import com.project.microservices.inventory_service.dtos.ProductDto;
 import com.project.microservices.inventory_service.services.ProductService;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cloud.client.ServiceInstance;
@@ -38,15 +39,14 @@ public class ProductsController {
         return ResponseEntity.ok(inventory);
     }
 
-    //test
-    @GetMapping("/fetchOrder")
-    public String fetchFromOrderService() {
 
-        // from "org.springframework.cloud.client.ServiceInstance" package
-        ServiceInstance orderService = discoveryClient.getInstances("order-service").getFirst();  //here this service id came from application name only (go to order application properties you can see the application name)
-        // getFirst() for getting first instance
+    @GetMapping("/fetchOrder")
+    public String fetchFromOrderService(HttpServletRequest httpServletRequest) {
+        log.info(httpServletRequest.getHeader("X-Custom-Header"));
+
+        ServiceInstance orderService = discoveryClient.getInstances("order-service").getFirst();  //here this service id came from application name only (go to order application properties u can see the application name
         return restClient.get()
-                .uri(orderService.getUri()+"/api/v1/orders/helloOrders")  //got the correct url of orders api
+                .uri(orderService.getUri()+"/orders/core/helloOrders")
                 .retrieve()
                 .body(String.class);
     }
