@@ -31,4 +31,11 @@ public class OrderController {
         return ResponseEntity.ok(order);
     }
 
+
+    //Dummy API
+    @GetMapping("/helloOrders")
+    public String helloOrders(){
+        return "Hello from OrderService";
+    }
+
 }
