@@ -3,10 +3,13 @@ package com.project.microservices.inventory_service.services;
 import com.project.microservices.inventory_service.dtos.ProductDto;
 import com.project.microservices.inventory_service.entities.ProductEntity;
 import com.project.microservices.inventory_service.repositories.ProductRepo;
+import com.project.microservices.order_service.dtos.OrderRequestDto;
+import com.project.microservices.order_service.dtos.OrderRequestItemDto;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
@@ -33,6 +36,31 @@ public class ProductService {
         Optional<ProductEntity> inventory = productRepo.findById(id);
         return inventory.map(item -> modelMapper.map(item,ProductDto.class))
                 .orElseThrow(()->new RuntimeException("Inventory not found"));
+    }
+
+
+    @Transactional
+    public Double reduceStocks(OrderRequestDto orderRequestDto) {
+        log.info("Reducing the stocks");
+        Double totalPrice = 0.0;
+        for(OrderRequestItemDto orderRequestItemDto: orderRequestDto.getItems()){
+            Long productId = orderRequestItemDto.getProductId();
+            Integer quantity = orderRequestItemDto.getQuantity();
+
+            ProductEntity product = productRepo.findById(productId)
+                    .orElseThrow(()-> new RuntimeException("Product not found with id: "+productId));
+
+            if(product.getStock() < quantity){
+                throw new RuntimeException("Product cannot be fulfilled for given quantity");
+            }
+
+            product.setStock(product.getStock() - quantity);
+            productRepo.save(product);
+            totalPrice += quantity*product.getPrice();
+
+        }
+
+        return totalPrice;
     }
 
 }

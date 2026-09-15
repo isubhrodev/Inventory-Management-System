@@ -38,4 +38,13 @@ public class OrderController {
         return "Hello from OrderService";
     }
 
+    @PostMapping("/create-order")
+    public ResponseEntity<OrderRequestDto> createOrder(@RequestBody OrderRequestDto orderRequestDto){
+        //The OrderRequestDto class is already created inside the previous article.
+
+        OrderRequestDto orderRequestDto1 = orderService.createOrder(orderRequestDto);
+        return ResponseEntity.ok(orderRequestDto1);
+
+    }
+
 }

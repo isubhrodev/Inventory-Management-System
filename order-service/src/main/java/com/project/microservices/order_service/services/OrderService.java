@@ -1,6 +1,9 @@
 package com.project.microservices.order_service.services;
 
+import com.project.microservices.order_service.clients.InventoryOpenFeignClient;
 import com.project.microservices.order_service.dtos.OrderRequestDto;
+import com.project.microservices.order_service.entities.OrderItemsEntity;
+import com.project.microservices.order_service.entities.OrderStatus;
 import com.project.microservices.order_service.entities.OrdersEntity;
 import com.project.microservices.order_service.repositories.OrderRepo;
 import lombok.RequiredArgsConstructor;
@@ -30,6 +33,28 @@ public class OrderService {
         log.info("Fetching order by id");
         OrdersEntity order = orderRepo.findById(id).orElseThrow(()->new RuntimeException("Order not found"));
         return modelMapper.map(order, OrderRequestDto.class);
+    }
+
+//    private final OrderRepo orderRepo; //OrderRepo is already created inside the previous article.
+//    private final ModelMapper modelMapper; //Modelmapper is already created inside the previous article.
+    private final InventoryOpenFeignClient inventoryOpenFeignClient;
+
+
+    public OrderRequestDto createOrder(OrderRequestDto orderRequestDto) {
+        log.info("Calling the createOrder method");
+        Double totalPrice = inventoryOpenFeignClient.reduceStocks(orderRequestDto);
+
+        //OrderEntity is already created inside the previous article.
+        OrdersEntity orders = modelMapper.map(orderRequestDto,OrdersEntity.class);
+
+        for(OrderItemsEntity orderItem: orders.getItems()){ //OrderItemsEntity is already created inside the previous article.
+            orderItem.setOrder(orders);
+        }
+        orders.setTotalPrice(totalPrice);
+        orders.setOrderStatus(OrderStatus.CONFIRMED); //OrderStatus is already created inside the previous article.
+
+        OrdersEntity savedOrder = orderRepo.save(orders);
+        return  modelMapper.map(savedOrder,OrderRequestDto.class);
     }
 
 }

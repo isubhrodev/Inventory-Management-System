@@ -1,6 +1,8 @@
 package com.project.microservices.inventory_service.controllers;
+import com.project.microservices.inventory_service.clients.OrderFeignClient;
 import com.project.microservices.inventory_service.dtos.ProductDto;
 import com.project.microservices.inventory_service.services.ProductService;
+import com.project.microservices.order_service.dtos.OrderRequestDto;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -25,6 +27,8 @@ public class ProductsController {
     // from "org.springframework.web.client.RestClient" package
     private final RestClient restClient;  // used for third party api call we need to configure it
 
+    private final OrderFeignClient orderFeignClient;
+
     @GetMapping
     public ResponseEntity<List<ProductDto>> getAllProducts(){
         log.info("Fetching all products via controller");
@@ -40,15 +44,31 @@ public class ProductsController {
     }
 
 
+//    @GetMapping("/fetchOrder")
+//    public String fetchFromOrderService(HttpServletRequest httpServletRequest) {
+//        log.info(httpServletRequest.getHeader("X-Custom-Header"));
+//
+//        ServiceInstance orderService = discoveryClient.getInstances("order-service").getFirst();  //here this service id came from application name only (go to order application properties u can see the application name
+//        return restClient.get()
+//                .uri(orderService.getUri()+"/orders/core/helloOrders")
+//                .retrieve()
+//                .body(String.class);
+//    }
+
+
+
     @GetMapping("/fetchOrder")
     public String fetchFromOrderService(HttpServletRequest httpServletRequest) {
         log.info(httpServletRequest.getHeader("X-Custom-Header"));
 
-        ServiceInstance orderService = discoveryClient.getInstances("order-service").getFirst();  //here this service id came from application name only (go to order application properties u can see the application name
-        return restClient.get()
-                .uri(orderService.getUri()+"/orders/core/helloOrders")
-                .retrieve()
-                .body(String.class);
+        return orderFeignClient.helloOrders();  //instead of restClient we use orderFeignClient
+    }
+
+
+    @PutMapping("reduce-stocks")
+    public ResponseEntity<Double> reduceStocks(@RequestBody OrderRequestDto orderRequestDto){
+        Double totalPrice = productService.reduceStocks(orderRequestDto);
+        return ResponseEntity.ok(totalPrice);
     }
 
 
